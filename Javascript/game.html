@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Diamond Race</title>
+    <style>
+        * { padding: 0; margin: 0; }
+        canvas { position: absolute; top: 0; left: 0}
+    </style>
+</head>
+<body>
+
+<canvas id="stage" width="1000" height="400" style="width:1000px;height:400px"></canvas>
+<canvas id="game" width="1000" height="400" style="width:1000px;height:400px"></canvas>
+
+<script>
+
+class STAGE {
+    constructor() {
+        this.canvas = document.getElementById("stage");
+        this.ctx = this.canvas.getContext("2d");
+        this.scale = window.devicePixelRatio;
+        this.canvas.width = Math.floor(this.canvas.width * this.scale);
+        this.canvas.height = Math.floor(this.canvas.height * this.scale);
+        // Normalize coordinate system to use css pixels
+        this.ctx.scale(this.scale, this.scale);
+
+        // Title
+        this.ctx.font="bold 20px Times New Roman";
+        this.ctx.fillText("Diamond race", 600, 50);
+        
+        // Race start line
+        this.ctx.font="bold 12px Times New Roman";
+        this.ctx.fillText("Start", 35, 100);
+        this.ctx.moveTo(50,120);
+        this.ctx.lineTo(50,370);
+        this.ctx.stroke();
+
+        // Race end line
+        this.ctx.font="bold 12px Times New Roman";
+        this.ctx.fillText("End", 690, 100);
+        this.ctx.moveTo(700,120);
+        this.ctx.lineTo(700,370);
+        this.ctx.stroke();
+
+        // Reset button
+        this.reset = new Path2D();
+        this.reset.moveTo(850, 100);
+        this.reset.lineTo(890, 100);
+        this.reset.quadraticCurveTo(900, 100, 900, 110);
+        this.reset.quadraticCurveTo(900, 120, 890, 120);
+        this.reset.lineTo(850, 120);
+        this.reset.quadraticCurveTo(840, 120, 840, 110);
+        this.reset.quadraticCurveTo(840, 100, 850, 100);
+        this.ctx.fillStyle = "#f1f1f1";
+        this.ctx.fill(this.reset);
+        this.ctx.stroke(this.reset);
+        this.ctx.fillStyle = "black";
+        this.ctx.font="16px Arial";
+        this.ctx.fillText("Reset", 850, 115);
+
+        // Score board
+        this.ctx.font="bold 12px Times New Roman";
+        this.ctx.fillText("Score board", 850, 200);
+        this.drawBar(215,"blue");
+        this.drawBar(235,"green");
+        this.drawBar(255,"red");
+        this.drawBar(275,"yellow");
+    }
+
+    drawBar(y,colour) { // Draw the coloured score board bars
+        this.ctx.lineJoin = "round";
+        this.ctx.lineWidth = 12;
+        this.ctx.beginPath();
+        this.ctx.lineTo(930,y);
+        this.ctx.lineTo(855,y);
+        this.ctx.closePath();
+        this.ctx.strokeStyle = colour;
+        this.ctx.stroke();
+    }
+}
+
+class CVS {
+    constructor() {
+        this.canvas = document.getElementById("game");
+        this.ctx = this.canvas.getContext("2d");
+        this.scale = window.devicePixelRatio;
+        this.canvas.width = Math.floor(this.canvas.width * this.scale);
+        this.canvas.height = Math.floor(this.canvas.height * this.scale);
+        // Normalize coordinate system to use css pixels
+        this.ctx.scale(this.scale, this.scale);
+    }
+
+    initiate() { // Draw the coloured diamonds at their initial positions
+        this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+        this.blue = new Diamond(130,"blue",218,"black");
+        this.green = new Diamond(190,"green",238,"black");
+        this.red = new Diamond(250,"red",258,"black");
+        this.yellow = new Diamond(310,"yellow",278,"black");
+
+        this.blue.draw(this.ctx);
+        this.green.draw(this.ctx);
+        this.red.draw(this.ctx);
+        this.yellow.draw(this.ctx);
+
+        window.addEventListener('click',this); // Check for mouse clicks
+    }
+
+    handleEvent() {
+        this.update();
+    }
+
+    update() {
+        // Check if diamond has been clicked. If yes, move diamond and check for winner.
+        var x = event.x * this.scale;
+        var y = event.y * this.scale;
+
+        var inside = false;
+        if (this.ctx.isPointInPath(this.blue.path,x,y)) {
+            this.blue.move();
+            inside = true;
+            if (this.blue.score > 9) {
+                this.blue.scoreColour = "red";
+                window.removeEventListener('click',this);
+            }
+        } else if (this.ctx.isPointInPath(this.green.path,x,y)) {
+            this.green.move();
+            inside = true;
+            if (this.green.score > 9) {
+                this.green.scoreColour = "red";
+                window.removeEventListener('click',this);
+            }
+        } else if (this.ctx.isPointInPath(this.red.path,x,y)) {
+            this.red.move();
+            inside = true;
+            if (this.red.score > 9) {
+                this.red.scoreColour = "red";
+                window.removeEventListener('click',this);
+            }
+        }  else if (this.ctx.isPointInPath(this.yellow.path,x,y)) {
+            this.yellow.move();
+            inside = true;
+            if (this.yellow.score > 9) {
+                this.yellow.scoreColour = "red";
+                window.removeEventListener('click',this);
+            }
+        }
+        if (inside) { // A diamond has been clicked. Redraw with the new diamond position.
+            this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+            this.blue.draw(this.ctx);
+            this.green.draw(this.ctx);
+            this.red.draw(this.ctx);
+            this.yellow.draw(this.ctx);
+        }
+
+    }
+}
+
+class Diamond {
+    constructor(y,colour,scoreY,scoreColour) {
+        this.x=50;
+        this.y=y;
+        this.score=0; // Value increases if diamond is moved.
+        this.scoreY=scoreY; // y-coordinate used for printing score to score board
+        this.scoreColour = scoreColour; // Colour used for printing score to score board
+        this.colour=colour; 
+    }
+    draw(ctx) {
+        this.path = new Path2D();
+        this.path.moveTo(this.x,this.y);
+        this.path.lineTo(this.x - 50 / 2, this.y + 50 / 2);
+        this.path.lineTo(this.x, this.y + 50);
+        this.path.lineTo(this.x + 50 / 2, this.y + 50 / 2);
+        this.path.closePath();
+        ctx.fillStyle = this.colour;
+        ctx.fill(this.path);
+        ctx.fillStyle = this.scoreColour;
+        ctx.font = "12px Times New Roman";
+        ctx.fillText(this.score,950,this.scoreY);
+    }
+
+    move() {
+        this.x += 65;  // Move diamond one step to the right
+        this.score += 1;
+    }
+}
+
+let stage = new STAGE();
+let cvs = new CVS();
+cvs.initiate();
+
+window.addEventListener('click',reset); // Check if Reset button has been clicked
+
+function reset() {
+    var x = event.x*cvs.scale;
+    var y = event.y*cvs.scale;
+
+    if (stage.ctx.isPointInPath(stage.reset,x,y)) {
+        cvs.initiate();
+    }
+}
+
+</script>
+</body>
+</html>
