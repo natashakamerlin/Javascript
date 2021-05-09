@@ -1,0 +1,5 @@
+Small web application game written in Javascript and CSS. 
+
+Clicking on one of the coloured diamonds moves it one step to the right, from the start line to the finish line. 
+Once a diamond has moved 10 steps, it is the winner and clicking no longer triggers a response for any of the diamonds. 
+The current scores are indicated on the score board. 
